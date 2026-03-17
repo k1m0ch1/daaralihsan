@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cloudflare
+.wrangler/
+.dev.vars
+
+# OS
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# logs
+*.log
