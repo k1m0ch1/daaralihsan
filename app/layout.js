@@ -20,6 +20,10 @@ export const metadata = {
   description:
     'Masjid Daar Al-Ihsan, Cimahi Utara. Pusat ibadah, dakwah, pendidikan, dan pemberdayaan umat. Jl. Permana Utara, Citeureup, Kota Cimahi, Jawa Barat.',
   keywords: 'Masjid Daar Al Ihsan, Cimahi, masjid Cimahi Utara, kajian, TPA, IRMA',
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
   openGraph: {
     title: 'Masjid Daar Al-Ihsan Cimahi',
     description: 'Bersama Untuk Menjadi Lebih Baik',
