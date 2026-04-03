@@ -1,12 +1,12 @@
 import Image from 'next/image'
 
 const galleryItems = [
-  { src: '/galeri/g1.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/daar_al_ihsan/p/DV-W81-FGIW/' },
-  { src: '/galeri/g2.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/daar_al_ihsan/p/DV8PuXLjKGO/' },
-  { src: '/galeri/g3.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/daar_al_ihsan/p/DV0TR-zDA8r/' },
-  { src: '/galeri/g4.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/daar_al_ihsan/p/DVxuxZ4ktk8/' },
-  { src: '/galeri/g5.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/daar_al_ihsan/p/DVvAkacjHb9/' },
-  { src: '/galeri/g6.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/daar_al_ihsan/p/DVsZD4_FDZZ/' },
+  { src: '/galeri/g1.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DWp3H9SAbyS/' },
+  { src: '/galeri/g2.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DWn4r9YgQMr/' },
+  { src: '/galeri/g3.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DWnlaWTkusZ/' },
+  { src: '/galeri/g4.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DWncEk0FPJn/' },
+  { src: '/galeri/g5.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DWkx0h3E6W_/' },
+  { src: '/galeri/g6.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DWig7r-j2CX/' },
 ]
 
 export default function Galeri() {
@@ -39,7 +39,6 @@ export default function Galeri() {
                 sizes="(max-width: 640px) 50vw, 33vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              {/* Hover overlay with Instagram icon */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                 <svg
                   className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
