@@ -3,11 +3,10 @@
 Update Galeri.js with the latest 6 posts from @daar_al_ihsan Instagram.
 
 Strategy:
-  1. Try instaloader (fast, no browser)
-  2. If that fails, fall back to Playwright (headless Chromium)
-  3. If both fail, exit 0 so the workflow doesn't error out
-  4. If posts are unchanged, exit 0 (nothing to commit)
-  5. If posts changed: download images, update gallery_posts.json + Galeri.js
+  1. Use Playwright to scrape anonyig.com (no login required, works in CI)
+  2. If that fails, exit 1 so the CI job is marked as failed (visible in GitHub Actions)
+  3. If posts are unchanged, exit 0 (nothing to commit)
+  4. If posts changed: download images, update gallery_posts.json + Galeri.js
 """
 
 import json
@@ -20,6 +19,7 @@ import requests
 
 INSTAGRAM_USERNAME = "daar_al_ihsan"
 GALLERY_COUNT = 6
+ANONYIG_URL = "https://anonyig.com/en/instagram-profile-viewer/"
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -47,93 +47,65 @@ INSTAGRAM_ICON_PATH = (
 
 
 # ---------------------------------------------------------------------------
-# Fetch posts via instaloader
+# Fetch posts via anonyig.com (no login required)
 # ---------------------------------------------------------------------------
 
-def fetch_via_instaloader() -> list[dict]:
-    import instaloader
-
-    L = instaloader.Instaloader(
-        download_pictures=False,
-        download_videos=False,
-        download_video_thumbnails=False,
-        download_geotags=False,
-        download_comments=False,
-        save_metadata=False,
-        quiet=True,
-    )
-    profile = instaloader.Profile.from_username(L.context, INSTAGRAM_USERNAME)
-    posts = []
-    for post in profile.get_posts():
-        if len(posts) >= GALLERY_COUNT:
-            break
-        posts.append(
-            {
-                "shortcode": post.shortcode,
-                "url": f"https://www.instagram.com/p/{post.shortcode}/",
-                "img_url": post.url,
-                "filename": f"g{len(posts) + 1}.jpg",
-            }
-        )
-        time.sleep(1)
-
-    return posts
-
-
-# ---------------------------------------------------------------------------
-# Fetch posts via Playwright (fallback)
-# ---------------------------------------------------------------------------
-
-def fetch_via_playwright() -> list[dict]:
+def fetch_via_anonyig() -> list[dict]:
     from playwright.sync_api import sync_playwright
 
+    print("  Launching browser...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         ctx = browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
+                "Chrome/124.0.0.0 Safari/537.36"
             ),
             viewport={"width": 1280, "height": 900},
+            locale="en-US",
         )
         page = ctx.new_page()
-        page.goto(
-            f"https://www.instagram.com/{INSTAGRAM_USERNAME}/",
-            wait_until="networkidle",
-            timeout=60_000,
-        )
+
+        print(f"  Loading {ANONYIG_URL} ...")
+        page.goto(ANONYIG_URL, wait_until="load", timeout=30_000)
         time.sleep(3)
 
-        raw = page.evaluate(
-            """() => {
-                const links = Array.from(document.querySelectorAll('a[href*="/p/"]'));
-                return links.slice(0, 12).map(a => ({
-                    href: a.href,
-                    img: a.querySelector('img')?.src || ''
-                }));
-            }"""
-        )
+        print(f"  Searching for @{INSTAGRAM_USERNAME} ...")
+        inp = page.locator("input.search-form__input")
+        inp.click()
+        inp.type(INSTAGRAM_USERNAME, delay=80)
+        time.sleep(1)
+
+        with page.expect_response(
+            lambda r: "postsV2" in r.url or "/posts" in r.url,
+            timeout=25_000,
+        ) as resp_info:
+            page.locator("button.search-form__button").click()
+
+        body = resp_info.value.json()
         browser.close()
 
+    edges = body.get("result", {}).get("edges", [])
+    print(f"  Got {len(edges)} posts from API")
+
     posts = []
-    seen = set()
-    for item in raw:
-        href = item["href"].rstrip("/")
-        shortcode = href.split("/p/")[-1].rstrip("/")
-        if not shortcode or shortcode in seen or not item["img"]:
+    for edge in edges:
+        if len(posts) >= GALLERY_COUNT:
+            break
+        node = edge.get("node", {})
+        shortcode = node.get("shortcode") or node.get("code")
+        display_url = node.get("display_url")
+        if not shortcode or not display_url:
             continue
-        seen.add(shortcode)
         posts.append(
             {
                 "shortcode": shortcode,
                 "url": f"https://www.instagram.com/p/{shortcode}/",
-                "img_url": item["img"],
+                "img_url": display_url,
                 "filename": f"g{len(posts) + 1}.jpg",
             }
         )
-        if len(posts) >= GALLERY_COUNT:
-            break
 
     return posts
 
@@ -157,14 +129,14 @@ def download_images(posts: list[dict]) -> None:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
+                "Chrome/124.0.0.0 Safari/537.36"
             ),
             "Referer": "https://www.instagram.com/",
         }
     )
     for post in posts:
         dest = PUBLIC_GALERI / post["filename"]
-        print(f"  Downloading {post['shortcode']} → {dest.name} ...", end=" ", flush=True)
+        print(f"  Downloading {post['shortcode']} -> {dest.name} ...", end=" ", flush=True)
         r = session.get(post["img_url"], timeout=30)
         r.raise_for_status()
         dest.write_bytes(r.content)
@@ -254,35 +226,19 @@ export default function Galeri() {{
 
 
 def main() -> None:
-    print(f"=== Checking @{INSTAGRAM_USERNAME} for new posts ===")
+    print(f"=== Checking @{INSTAGRAM_USERNAME} for new posts via anonyig.com ===")
 
-    # --- fetch ---
     posts: list[dict] = []
 
-    # Try instaloader first
     try:
-        import instaloader  # noqa: F401
-
-        print("Trying instaloader...")
-        posts = fetch_via_instaloader()
-        print(f"  instaloader: got {len(posts)} posts")
+        posts = fetch_via_anonyig()
+        print(f"  anonyig: got {len(posts)} posts")
     except Exception as exc:
-        print(f"  instaloader failed: {exc}")
-
-    # Fall back to Playwright
-    if not posts:
-        try:
-            import playwright  # noqa: F401
-
-            print("Trying Playwright fallback...")
-            posts = fetch_via_playwright()
-            print(f"  Playwright: got {len(posts)} posts")
-        except Exception as exc:
-            print(f"  Playwright failed: {exc}")
+        print(f"  anonyig failed: {exc}")
 
     if not posts:
-        print("Could not fetch posts from either method — skipping update.")
-        sys.exit(0)
+        print("Could not fetch posts — failing so CI reports the error.")
+        sys.exit(1)
 
     # --- compare ---
     new_codes = [p["shortcode"] for p in posts]
@@ -292,6 +248,7 @@ def main() -> None:
 
     if new_codes == old_codes:
         print("No changes — gallery is up to date.")
+        _set_github_output("gallery_updated", "false")
         sys.exit(0)
 
     # --- update ---
@@ -303,7 +260,17 @@ def main() -> None:
     print(f"  Written {POSTS_JSON.relative_to(ROOT_DIR)}")
 
     write_galeri_js(posts)
+    _set_github_output("gallery_updated", "true")
     print("Done.")
+
+
+def _set_github_output(key: str, value: str) -> None:
+    """Write a GitHub Actions output variable if running in CI."""
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as f:
+            f.write(f"{key}={value}\n")
+    print(f"  [output] {key}={value}")
 
 
 if __name__ == "__main__":

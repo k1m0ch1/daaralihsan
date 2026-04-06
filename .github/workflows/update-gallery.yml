@@ -31,10 +31,12 @@ jobs:
       - name: Install Playwright browsers (Chromium only)
         run: playwright install chromium --with-deps
 
-      - name: Run gallery update script
+      - name: Check for new Instagram posts
+        id: gallery
         run: python scripts/update_gallery.py
 
-      - name: Commit and push changes (if any)
+      - name: Commit and push (only if new posts found)
+        if: steps.gallery.outputs.gallery_updated == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -42,10 +44,9 @@ jobs:
             public/galeri/ \
             app/components/Galeri.js \
             scripts/gallery_posts.json
-          # Only commit if there are staged changes
-          if git diff --staged --quiet; then
-            echo "Nothing to commit."
-          else
-            git commit -m "chore: sync Instagram gallery $(TZ='Asia/Jakarta' date +'%Y-%m-%d %H:%M WIB')"
-            git push
-          fi
+          git commit -m "chore: sync Instagram gallery $(TZ='Asia/Jakarta' date +'%Y-%m-%d %H:%M WIB')"
+          git push
+
+      - name: No new posts
+        if: steps.gallery.outputs.gallery_updated != 'true'
+        run: echo "Gallery is already up to date — skipping deploy."
