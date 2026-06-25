@@ -3,10 +3,10 @@ import Image from 'next/image'
 const galleryItems = [
   { src: '/galeri/g1.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZuLzXZkh8r/' },
   { src: '/galeri/g2.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DR4EOrXEhOk/' },
-  { src: '/galeri/g3.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZ35Y1tiUfO/' },
-  { src: '/galeri/g4.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZ1Sy4EvLVc/' },
-  { src: '/galeri/g5.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZyp08jPmsg/' },
-  { src: '/galeri/g6.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZtl6nqhhMw/' },
+  { src: '/galeri/g3.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DaAYlufFeMF/' },
+  { src: '/galeri/g4.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DaAFzM2lAE-/' },
+  { src: '/galeri/g5.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZ_zJVDtBcA/' },
+  { src: '/galeri/g6.jpg', alt: 'Kegiatan Masjid Daar Al-Ihsan', href: 'https://www.instagram.com/p/DZ9VoIJhaAr/' },
 ]
 
 export default function Galeri() {
